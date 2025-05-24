@@ -1,28 +1,29 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: #0d0d0d;
-  background-color: #f3f3f3;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.App {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  height: 100vh;
+  padding: 16px;
 }
 
-* {
-  box-sizing: border-box;
+.Header {
+  text-align: center;
+}
+
+.Logo {
+  width: 64px;
+  height: 64px;
+}
+
+.Title {
   margin: 0;
-  padding: 0;
 }
 
-body {
+.ChatContainer {
+  flex-grow: 1;
   width: 100%;
-  max-width: 640px;
-  min-height: 100vh;
-  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 16px;
+  overflow-y: auto;
 }
-
