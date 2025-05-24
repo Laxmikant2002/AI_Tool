@@ -1,16 +1,24 @@
 .Controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
+  padding: 8px 0;
 }
 
 .TextAreaContainer {
   flex-grow: 1;
-  padding: 8px 16px;
+  padding: 12px 18px;
   line-height: 0;
-  border-radius: 16px;
-  background: #ffffff;
+  border-radius: var(--radius-lg);
+  background: var(--surface-color);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.TextAreaContainer:focus-within {
+  box-shadow: 0 0 0 2px var(--primary-light), var(--shadow-sm);
 }
 
 .TextArea {
@@ -19,21 +27,46 @@
   border: none;
   outline: none;
   resize: none;
-  background: #ffffff;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  padding: 0;
+  font-size: 14px;
 }
 
 .Button {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: none;
   border-radius: 50%;
   outline: none;
-  background: #0d0d0d;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.Button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(99, 102, 241, 0.2);
+}
+
+.Button:active {
+  transform: translateY(0);
+}
+
+.TextArea:disabled,
+.Button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .Button svg {
-  fill: #f3f3f3;
+  fill: white;
+  width: 20px;
+  height: 20px;
 }

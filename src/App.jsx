@@ -1,57 +1,78 @@
-import React from 'react';
-import { Chat } from './components/Chat/Chat.jsx';
-import styles from './App.module.css';
-import { Controls } from './components/Controls/Controls.jsx';
-import {GoogleGenerativeAI} from '@google/generative-ai';
-
-const googleai = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_API_KEY);
-const gemini = googleai.getGemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
-const chat = gemini.startChat({history: []});
+import { useState } from "react";
+import { AIProvider } from "./assistants";
+import { Loader } from "./components/Loader/Loader";
+import { Chat } from "./components/Chat/Chat";
+import { Controls } from "./components/Controls/Controls";
+import styles from "./App.module.css";
 
 function App() {
-  const [messages, setMessages] = React.useState([]);
+  const assistant = new AIProvider();
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  function updateLastMessageContent(content) {
+    setMessages((prevMessages) =>
+      prevMessages.map((message, index) =>
+        index === prevMessages.length - 1
+          ? { ...message, content: `${message.content}${content}` }
+          : message
+      )
+    );
+  }
+
+  function addMessage(message) {
+    setMessages((prevMessages) => [...prevMessages, message]);
+  }
+
+  async function handleContentSend(content) {
+    addMessage({ content, role: "user" });
+    setIsLoading(true);
+    try {
+      const result = await assistant.chatStream(content, messages);
+      let isFirstChunk = false;
+
+      for await (const chunk of result) {
+        if (!isFirstChunk) {
+          isFirstChunk = true;
+          addMessage({ content: "", role: "assistant" });
+          setIsLoading(false);
+          setIsStreaming(true);
+        }
+
+        updateLastMessageContent(chunk);
+      }
+
+      setIsStreaming(false);
+    } catch (error) {
+      addMessage({
+        content: "Sorry, I couldn't process your request. Please try again!",
+        role: "system",
+      });
+      setIsLoading(false);
+      setIsStreaming(false);
+    }
+  }
 
   return (
     <div className={styles.App}>
+      {isLoading && <Loader />}
       <header className={styles.Header}>
         <img className={styles.Logo} src="/chat-bot.png" alt="Chat Bot Logo" />
-        <h2 className={styles.Title}>AI ChatBot</h2>
+        <h2 className={styles.Title}>AI Chatbot</h2>
       </header>
       <div className={styles.ChatContainer}>
         <Chat messages={messages} />
       </div>
-      <Controls onSend={(content) => {
-        setMessages([...messages, { role: 'user', content }]);
-      }} />
-  </div>
+      <Controls
+        isDisabled={isLoading || isStreaming}
+        onSend={handleContentSend}
+      />
+      <div className={styles.PoweredBy}>
+        Powered by OpenAI & Google AI
+      </div>
+    </div>
   );
 }
 
-const MESSAGES = [
-{
-    role: 'user',
-    constext: 'Hello, how can I help you today?',
-},
-{
-    role: 'assistant',
-    content: 'I am looking for information on your services.',
-},
-{
-    role: 'user',
-    content: 'Can you tell me more about your pricing?',
-},
-{
-    role: 'assistant',
-    content: 'Sure! Our basic plan starts at $10 per month.',
-},
-{
-    role: 'user',
-    content: 'That sounds good. How do I sign up?',
-},
-{
-    role: 'assistant',
-    content: 'You can sign up on our website by clicking the "Sign Up" button.',
-}
-]
-
-export default App
+export default App;
