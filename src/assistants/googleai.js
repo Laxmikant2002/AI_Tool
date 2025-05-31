@@ -1,6 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const googleai = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_AI_API_KEY);
+import { chatWithGoogleAI } from '../api/client';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export class Assistant {
   #chat;
@@ -12,8 +11,8 @@ export class Assistant {
 
   async chat(content) {
     try {
-      const result = await this.#chat.sendMessage(content);
-      return result.response.text();
+      const result = await chatWithGoogleAI(content);
+      return result.content;
     } catch (error) {
       throw error;
     }
@@ -21,11 +20,8 @@ export class Assistant {
 
   async *chatStream(content) {
     try {
-      const result = await this.#chat.sendMessageStream(content);
-
-      for await (const chunk of result.stream) {
-        yield chunk.text();
-      }
+      const result = await chatWithGoogleAI(content);
+      yield result.content;
     } catch (error) {
       throw error;
     }

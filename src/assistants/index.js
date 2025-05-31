@@ -1,79 +1,96 @@
-import { Assistant as OpenAIAssistant } from "./openai";
-import { Assistant as GoogleAIAssistant } from "./googleai";
+import { AssistantFactory } from './AssistantFactory';
+import { config } from '../config/ai.config';
 
+/**
+ * Main AI provider class that manages different AI assistants
+ */
 export class AIProvider {
-  #openAIAssistant;
-  #googleAIAssistant;
-  #activeProvider = "openai";
-  #failoverEnabled = true;
+  #factory;
+  #activeProvider;
+  #failoverEnabled;
 
   constructor() {
-    this.#openAIAssistant = new OpenAIAssistant();
-    this.#googleAIAssistant = new GoogleAIAssistant();
+    this.#factory = new AssistantFactory();
+    this.#activeProvider = config.provider.default;
+    this.#failoverEnabled = config.provider.failoverEnabled;
+
+    // Register available providers
+    this.#factory.registerProvider('openai', () => import('./openai'));
+    this.#factory.registerProvider('googleai', () => import('./googleai'));
   }
 
+  /**
+   * Sends a chat message to the active AI provider
+   * @param {string} content - Message content
+   * @param {Array} history - Chat history
+   * @returns {Promise<string>} The assistant's response
+   */
   async chat(content, history) {
     try {
-      if (this.#activeProvider === "openai") {
-        return await this.#openAIAssistant.chat(content, history);
-      } else {
-        return await this.#googleAIAssistant.chat(content);
-      }
+      const provider = await this.#factory.getProvider(this.#activeProvider);
+      return await provider.chat(content, history);
     } catch (error) {
-      if (this.#failoverEnabled && this.#activeProvider === "openai" && error.message.includes("quota")) {
-        console.log("Switching to Google AI due to OpenAI quota limit");
-        this.#activeProvider = "googleai";
-        return await this.#googleAIAssistant.chat(content);
+      if (this.#shouldFailover(error)) {
+        console.log(`Switching to Google AI due to ${this.#activeProvider} unavailability`);
+        this.#activeProvider = 'googleai';
+        const fallbackProvider = await this.#factory.getProvider('googleai');
+        return await fallbackProvider.chat(content, history);
       }
-      throw error;
-    }
-  }
-  async *chatStream(content, history) {
-    try {
-      if (this.#activeProvider === "openai") {
-        try {
-          for await (const chunk of this.#openAIAssistant.chatStream(content, history)) {
-            yield chunk;
-          }
-        } catch (openaiError) {
-          console.error(`openai error:`, openaiError);
-          
-          // Switch to Google AI if OpenAI fails with rate limit or quota error
-          if (this.#failoverEnabled && 
-              (openaiError.message.includes("quota") || 
-               openaiError.message.includes("429") || 
-               openaiError.response?.status === 429)) {
-            
-            console.log("🔄 Switching to Google AI due to OpenAI unavailability");
-            this.#activeProvider = "googleai";
-            
-            // Try with Google AI instead
-            const response = await this.#googleAIAssistant.chat(content);
-            yield `[Switched to Google AI] ${response}`;
-            return;
-          }
-          
-          // Re-throw if not handled
-          throw openaiError;
-        }
-      } else {
-        // Google AI doesn't support streaming in the same way
-        const response = await this.#googleAIAssistant.chat(content);
-        yield response;
-      }
-    } catch (error) {
-      console.error(`${this.#activeProvider} provider error:`, error);
       throw error;
     }
   }
 
+  /**
+   * Streams a chat response from the active AI provider
+   * @param {string} content - Message content
+   * @param {Array} history - Chat history
+   * @returns {AsyncGenerator<string>} Response stream
+   */
+  async *chatStream(content, history) {
+    try {
+      const provider = await this.#factory.getProvider(this.#activeProvider);
+      for await (const chunk of provider.chatStream(content, history)) {
+        yield chunk;
+      }
+    } catch (error) {
+      if (this.#shouldFailover(error)) {
+        console.log(`Switching to Google AI due to ${this.#activeProvider} unavailability`);
+        this.#activeProvider = 'googleai';
+        const fallbackProvider = await this.#factory.getProvider('googleai');
+        const response = await fallbackProvider.chat(content, history);
+        yield `[Switched to Google AI] ${response}`;
+        return;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the current active provider name
+   */
   get provider() {
     return this.#activeProvider;
   }
 
+  /**
+   * Sets the active provider
+   * @param {string} provider - Provider name
+   */
   setProvider(provider) {
-    if (provider === "openai" || provider === "googleai") {
+    if (provider === 'openai' || provider === 'googleai') {
       this.#activeProvider = provider;
     }
+  }
+
+  /**
+   * Checks if failover should be attempted
+   * @private
+   */
+  #shouldFailover(error) {
+    return this.#failoverEnabled && 
+           this.#activeProvider === 'openai' && 
+           (error.message.includes('quota') || 
+            error.message.includes('429') || 
+            error.response?.status === 429);
   }
 }

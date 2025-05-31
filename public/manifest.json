@@ -1,0 +1,29 @@
+{
+  "name": "AI Chatbot",
+  "short_name": "AI Chat",
+  "description": "AI Chatbot powered by OpenAI and Google AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "mobile-web-app-capable": "yes",
+  "icons": [
+    {
+      "src": "/chat-bot.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Chat",
+      "short_name": "New",
+      "description": "Start a new chat",
+      "url": "/new"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false
+}
