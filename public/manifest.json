@@ -1,40 +1,16 @@
 {
-  "name": "AI Chatbot",
-  "short_name": "AI Chat",
-  "description": "AI Chatbot powered by OpenAI and Google AI",
+  "name": "Simple Chat",
+  "short_name": "Chat",
+  "description": "A simple chat interface for AI interactions",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
-  "orientation": "portrait-primary",
-  "mobile-web-app-capable": "yes",  "icons": [
+  "icons": [
     {
       "src": "/chat-bot.svg",
       "type": "image/svg+xml",
-      "sizes": "any",
-      "purpose": "any"
-    },
-    {
-      "src": "/chat-bot-192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/chat-bot-512.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
+      "sizes": "any"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "New Chat",
-      "short_name": "New",
-      "description": "Start a new chat",
-      "url": "/new"
-    }
-  ],
-  "categories": ["productivity", "utilities"],
-  "prefer_related_applications": false
+  ]
 }

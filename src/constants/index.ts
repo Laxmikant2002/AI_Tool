@@ -45,7 +45,7 @@ export const ALLOWED_FILE_TYPES = [
 ] as const;
 
 // Message Constants
-export const MAX_MESSAGE_LENGTH = 4096;  // Matches Gemini's token limit
+export const MAX_MESSAGE_LENGTH = 2000;
 export const MAX_CONTEXT_LENGTH = 32768; // Maximum context window
 export const AUTO_CLOSE_DELAY = 3000;    // 3 seconds
 export const TYPING_INDICATOR_DELAY = 500; // 0.5 seconds
@@ -83,14 +83,13 @@ export const STORAGE_KEYS = {
   SETTINGS: 'userSettings'
 } as const;
 
+// Message Types
+export const ROLES = ['user', 'assistant', 'system'] as const;
+
 // Error Messages
 export const ERROR_MESSAGES = {
   NETWORK: 'Network error. Please check your connection and try again.',
-  FILE_SIZE: `File size should not exceed ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-  UNSUPPORTED_FILE: 'This file type is not supported',
   API_ERROR: 'An error occurred while processing your request. Please try again.',
-  WEBSOCKET: 'Connection lost. Attempting to reconnect...',
   RATE_LIMIT: 'Rate limit exceeded. Please try again later.',
-  TOKEN_LIMIT: 'Message exceeds maximum token limit',
-  AI_PROVIDER: 'AI provider unavailable. Switching to fallback provider...'
+  TOKEN_LIMIT: 'Message exceeds maximum token limit'
 } as const;
