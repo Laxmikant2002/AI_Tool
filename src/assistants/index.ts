@@ -12,13 +12,20 @@ export class AIProvider {
   #failoverEnabled: boolean;
 
   constructor() {
-    this.#factory = new AssistantFactory();
+    this.#factory = AssistantFactory.getInstance();
     this.#activeProvider = config.provider.default;
     this.#failoverEnabled = config.provider.failoverEnabled;
 
     // Register available providers
-    this.#factory.registerProvider('googleai', () => import('./googleai'));
-    this.#factory.registerProvider('deepseek', () => import('./deepseek'));
+    this.#factory.registerProvider('googleai', async () => {
+      const { GoogleAIAssistant } = await import('./googleai');
+      return { default: GoogleAIAssistant };
+    });
+
+    this.#factory.registerProvider('deepseek', async () => {
+      const { DeepseekAI } = await import('./deepseek');
+      return { default: DeepseekAI };
+    });
   }
 
   /**

@@ -7,13 +7,24 @@
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "orientation": "portrait-primary",
-  "mobile-web-app-capable": "yes",
-  "icons": [
+  "mobile-web-app-capable": "yes",  "icons": [
     {
-      "src": "/chat-bot.png",
+      "src": "/chat-bot.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/chat-bot-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any"
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/chat-bot-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
