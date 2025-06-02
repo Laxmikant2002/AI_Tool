@@ -1,4 +1,4 @@
-import { AIProvider, ScrollBehavior } from '@/types';
+import { AIProvider } from '@/types';
 
 interface RateLimit {
   requestsPerMinute: number;

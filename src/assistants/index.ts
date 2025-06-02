@@ -18,13 +18,13 @@ export class AIProvider {
 
     // Register available providers
     this.#factory.registerProvider('googleai', async () => {
-      const { GoogleAIAssistant } = await import('./googleai');
-      return { default: GoogleAIAssistant };
+      const { GoogleAIAssistant: Assistant } = await import('./googleai');
+      return { default: Assistant };
     });
 
     this.#factory.registerProvider('deepseek', async () => {
-      const { DeepseekAI } = await import('./deepseek');
-      return { default: DeepseekAI };
+      const { DeepseekAI: Assistant } = await import('./deepseek');
+      return { default: Assistant };
     });
   }
 

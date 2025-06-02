@@ -1,4 +1,5 @@
-import { IAssistant } from './IAssistant';
+import { IAssistant, ChatOptions } from './IAssistant';
+import { Message } from '@/types';
 
 export class DeepseekAI extends IAssistant {
   private apiKey: string;
@@ -14,7 +15,7 @@ export class DeepseekAI extends IAssistant {
     this.retryDelay = config.retryDelay || 1000;
   }
 
-  async chat(content: string, history: any[], options: any = {}) {
+  async chat(content: string, history?: Message[], options?: ChatOptions): Promise<string> {
     try {
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -24,9 +25,11 @@ export class DeepseekAI extends IAssistant {
         },
         body: JSON.stringify({
           model: this.model,
-          messages: [...history, { role: 'user', content }],
+          messages: [...(history || []), { role: 'user', content }],
+          stream: false,
           ...options
-        })
+        }),
+        signal: options?.signal
       });
 
       if (!response.ok) {
@@ -34,17 +37,14 @@ export class DeepseekAI extends IAssistant {
       }
 
       const data = await response.json();
-      return {
-        content: data.choices[0].message.content,
-        role: 'assistant'
-      };
+      return data.choices[0].message.content;
     } catch (error) {
       console.error('Deepseek chat error:', error);
       throw error;
     }
   }
 
-  async *chatStream(content: string, history: any[], options: any = {}) {
+  async *chatStream(content: string, history?: Message[], options?: ChatOptions): AsyncGenerator<string> {
     try {
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -54,41 +54,38 @@ export class DeepseekAI extends IAssistant {
         },
         body: JSON.stringify({
           model: this.model,
-          messages: [...history, { role: 'user', content }],
+          messages: [...(history || []), { role: 'user', content }],
           stream: true,
           ...options
-        })
+        }),
+        signal: options?.signal
       });
 
       if (!response.ok) {
         throw new Error(`Deepseek API error: ${response.statusText}`);
       }
 
-      const reader = response.body?.getReader();
+      const reader = response.body!.getReader();
       const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error('No reader available');
-      }
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
+        const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = JSON.parse(line.slice(6));
-            if (data.choices[0].delta.content) {
+            if (data.choices && data.choices[0]?.delta?.content) {
               yield data.choices[0].delta.content;
             }
           }
         }
       }
     } catch (error) {
-      console.error('Deepseek stream error:', error);
+      console.error('Deepseek chat stream error:', error);
       throw error;
     }
   }

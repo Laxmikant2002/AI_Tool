@@ -8,7 +8,7 @@ import {
   SuggestIcon,
   LoadingIcon 
 } from '../../common/Icons';
-import { Button } from '../../common/Button';
+import { Button } from '../../common/Button/Button';
 import { useInView } from '@/hooks/useInView';
 import { analytics } from '@/services/analytics';
 import styles from './Controls.module.css';
@@ -35,7 +35,7 @@ const SMART_SUGGESTIONS = [
   'What are the alternatives?',
   'What are the pros and cons?',
   'What are the best practices?'
-] as const;
+];
 
 export function Controls({ 
   isDisabled = false, 
@@ -222,13 +222,31 @@ export function Controls({
   const handleDragLeave = useCallback(() => {
     setIsDragging(false);
   }, []);
-
   const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDragging(false);
     
     const file = event.dataTransfer.files[0];
-    if (file && onFileUpload) handleFileSelect({ target: { files: [file] } } as React.ChangeEvent<HTMLInputElement>);
+    if (file && onFileUpload) {
+      // Create a properly structured synthetic event
+      const syntheticEvent = {
+        target: {
+          files: [file],
+          value: '',
+          name: fileInputRef.current?.name ?? '',
+        },
+        currentTarget: fileInputRef.current,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        bubbles: true,
+        cancelable: true,
+        timeStamp: Date.now(),
+        type: 'change',
+        isTrusted: true,
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+      
+      handleFileSelect(syntheticEvent);
+    }
   }, [handleFileSelect, onFileUpload]);
 
   const handleEmojiSelect = useCallback((emoji: string) => {

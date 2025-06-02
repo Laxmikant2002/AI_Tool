@@ -8,7 +8,7 @@ import {
   TranslateIcon, 
   ContrastIcon 
 } from '../../common/Icons';
-import { Button } from '../../common/Button';
+import { Button } from '../../common/Button/Button';
 import { Theme, Language } from '@/types';
 import styles from './Layout.module.css';
 
