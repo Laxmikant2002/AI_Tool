@@ -1,15 +1,19 @@
-import { forwardRef } from 'react';
+import React, { forwardRef } from 'react';
 import styles from './Button.module.css';
 
-/**
- * Button variants
- * @typedef {'primary' | 'secondary' | 'ghost' | 'danger'} ButtonVariant
- */
+type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
-/**
- * Button sizes
- * @typedef {'sm' | 'md' | 'lg'} ButtonSize
- */
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  isFullWidth?: boolean;
+  isLoading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  className?: string;
+  'aria-label'?: string;
+}
 
 /**
  * Reusable button component with consistent styling and accessibility
@@ -27,39 +31,29 @@ import styles from './Button.module.css';
  * @param {string} [props.ariaLabel] - Accessible label
  * @param {function} [props.onClick] - Click handler
  */
-export const Button = forwardRef(({
-  children,
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   variant = 'primary',
   size = 'md',
   isFullWidth = false,
-  isDisabled = false,
   isLoading = false,
   leftIcon,
   rightIcon,
-  type = 'button',
   className = '',
-  ariaLabel,
-  onClick,
+  children,
   ...props
 }, ref) => {
-  const classes = [
-    styles.Button,
-    styles[variant],
-    styles[size],
-    isFullWidth && styles.fullWidth,
-    isLoading && styles.loading,
-    className
-  ].filter(Boolean).join(' ');
-
   return (
     <button
       ref={ref}
-      type={type}
-      className={classes}
-      disabled={isDisabled || isLoading}
-      aria-label={ariaLabel}
-      aria-disabled={isDisabled || isLoading}
-      onClick={onClick}
+      className={`
+        ${styles.Button}
+        ${styles[variant]}
+        ${styles[size]}
+        ${isFullWidth ? styles.FullWidth : ''}
+        ${isLoading ? styles.Loading : ''}
+        ${className}
+      `}
+      disabled={isLoading || props.disabled}
       {...props}
     >
       {isLoading && (
@@ -94,4 +88,4 @@ export const Button = forwardRef(({
       )}
     </button>
   );
-}); 
+});

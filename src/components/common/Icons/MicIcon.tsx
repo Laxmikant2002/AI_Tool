@@ -1,6 +1,10 @@
 import React from 'react';
 
-export default function MicIcon(props) {
+interface MicIconProps extends React.SVGProps<SVGSVGElement> {
+  className?: string;
+}
+
+export default function MicIcon({ className, ...props }: MicIconProps) {
   return (
     <svg
       viewBox="0 0 24 24"

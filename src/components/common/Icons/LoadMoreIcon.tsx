@@ -1,6 +1,10 @@
 import React from 'react';
 
-export default function LoadMoreIcon(props) {
+interface LoadMoreIconProps extends React.SVGProps<SVGSVGElement> {
+  className?: string;
+}
+
+export default function LoadMoreIcon({ className, ...props }: LoadMoreIconProps) {
   return (
     <svg
       viewBox="0 0 24 24"

@@ -12,6 +12,7 @@ import { Button } from '../../common/Button';
 import { useInView } from '@/hooks/useInView';
 import { analytics } from '@/services/analytics';
 import styles from './Controls.module.css';
+import { ControlsProps } from '@/types';
 
 const MAX_LENGTH = 2000;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -23,7 +24,7 @@ const ALLOWED_FILE_TYPES = [
   '.doc',
   '.docx',
   '.txt'
-];
+] as const;
 
 const SMART_SUGGESTIONS = [
   'Tell me more about that',
@@ -34,18 +35,18 @@ const SMART_SUGGESTIONS = [
   'What are the alternatives?',
   'What are the pros and cons?',
   'What are the best practices?'
-];
+] as const;
 
 export function Controls({ 
-  isDisabled, 
+  isDisabled = false, 
   onSend, 
   onFileUpload,
   quickReplies = [],
   onQuickReplySelect,
-  isTyping,
+  isTyping = false,
   onTypingChange,
   className
-}) {
+}: ControlsProps) {
   // State
   const [content, setContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -54,17 +55,17 @@ export function Controls({
   const [recordingTime, setRecordingTime] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState(SMART_SUGGESTIONS);
+  const [suggestions, setSuggestions] = useState<string[]>(SMART_SUGGESTIONS);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
   // Refs
-  const textareaRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const mediaRecorder = useRef(null);
-  const recordedChunks = useRef([]);
-  const typingTimeoutRef = useRef(null);
-  const controlsRef = useRef(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const recordedChunks = useRef<Blob[]>([]);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
 
   // Custom hooks
   const isInView = useInView(controlsRef);
@@ -85,8 +86,8 @@ export function Controls({
 
   // Effects
   useEffect(() => {
-    function handleGlobalClick(e) {
-      if (!controlsRef.current?.contains(e.target)) {
+    function handleGlobalClick(e: MouseEvent) {
+      if (controlsRef.current && !controlsRef.current.contains(e.target as Node)) {
         setShowEmojiPicker(false);
         setShowSuggestions(false);
       }
@@ -111,7 +112,7 @@ export function Controls({
   }, [isRecording]);
 
   // Handlers
-  const handleSubmit = useCallback(async (event) => {
+  const handleSubmit = useCallback(async (event?: React.FormEvent) => {
     event?.preventDefault();
     
     if (!content.trim() || isDisabled) return;
@@ -127,11 +128,11 @@ export function Controls({
     }
   }, [content, isDisabled, onSend]);
 
-  const handleKeyDown = useCallback((event) => {
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     // Enter to send (without shift)
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      handleSubmit(event);
+      handleSubmit();
     }
     // Slash for suggestions
     else if (event.key === '/' && !content) {
@@ -145,7 +146,7 @@ export function Controls({
     }
   }, [content, handleSubmit]);
 
-  const handleChange = useCallback((event) => {
+  const handleChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = event.target.value;
     
     if (newContent.length <= MAX_LENGTH) {
@@ -154,7 +155,9 @@ export function Controls({
 
       // Handle typing indicator
       if (onTypingChange) {
-        clearTimeout(typingTimeoutRef.current);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
         onTypingChange(true);
         
         typingTimeoutRef.current = setTimeout(() => {
@@ -175,44 +178,43 @@ export function Controls({
     }
   }, [onTypingChange]);
 
-  const handleFileSelect = useCallback((event) => {
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) handleFileUpload(file);
-  }, []);
+    if (!file || !onFileUpload) return;
 
-  const handleFileUpload = useCallback(async (file) => {
     if (file.size > MAX_FILE_SIZE) {
-      alert(`File size should not exceed ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+      alert('File size exceeds 5MB limit');
       return;
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
+    const reader = new FileReader();
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      await onFileUpload?.(file, (progress) => {
-        setUploadProgress(progress);
-      });
-
-      analytics.track('file_uploaded', { 
-        type: file.type, 
-        size: file.size 
-      });
-    } catch (error) {
-      console.error('Upload failed:', error);
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress((e.loaded / e.total) * 100);
       }
-    }
+    };
+
+    reader.onload = async () => {
+      try {
+        await onFileUpload(file);
+      } catch (error) {
+        console.error('Failed to upload file:', error);
+        alert('Failed to upload file');
+      } finally {
+        setIsUploading(false);
+        setUploadProgress(0);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   }, [onFileUpload]);
 
-  const handleDragOver = useCallback((event) => {
+  const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDragging(true);
   }, []);
@@ -221,21 +223,21 @@ export function Controls({
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((event) => {
+  const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDragging(false);
     
     const file = event.dataTransfer.files[0];
-    if (file) handleFileUpload(file);
-  }, [handleFileUpload]);
+    if (file && onFileUpload) handleFileSelect({ target: { files: [file] } } as React.ChangeEvent<HTMLInputElement>);
+  }, [handleFileSelect, onFileUpload]);
 
-  const handleEmojiSelect = useCallback((emoji) => {
+  const handleEmojiSelect = useCallback((emoji: string) => {
     setContent(prev => prev + emoji);
     setShowEmojiPicker(false);
     textareaRef.current?.focus();
   }, []);
 
-  const handleSuggestionSelect = useCallback((suggestion) => {
+  const handleSuggestionSelect = useCallback((suggestion: string) => {
     setContent(suggestion);
     setShowSuggestions(false);
     textareaRef.current?.focus();
@@ -245,7 +247,8 @@ export function Controls({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder.current = new MediaRecorder(stream);
-      
+      recordedChunks.current = [];
+
       mediaRecorder.current.ondataavailable = (e) => {
         if (e.data.size > 0) {
           recordedChunks.current.push(e.data);
@@ -253,12 +256,13 @@ export function Controls({
       };
 
       mediaRecorder.current.onstop = () => {
-        const audioBlob = new Blob(recordedChunks.current, { type: 'audio/webm' });
-        onFileUpload?.(new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' }));
-        recordedChunks.current = [];
+        const blob = new Blob(recordedChunks.current, { type: 'audio/webm' });
+        const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
+        if (onFileUpload) onFileUpload(file);
       };
 
       mediaRecorder.current.start();
+
       const interval = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);

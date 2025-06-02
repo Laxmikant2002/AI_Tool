@@ -6,32 +6,53 @@ import { ScrollToBottom } from "../../common/ScrollToBottom/ScrollToBottom";
 import { RobotIcon, FileIcon, LoadMoreIcon, MicIcon, DownloadIcon } from "../../common/Icons";
 import styles from "./Chat.module.css";
 
-const TYPING_INDICATORS = ['dots', 'ellipsis', 'text'];
+interface Message {
+  role: 'assistant' | 'user';
+  content: string;
+  timestamp: string;
+  file?: FileAttachment;
+}
+
+interface FileAttachment {
+  name: string;
+  size: number;
+  type: string;
+  url?: string;
+}
+
+interface ToastMessage {
+  message: string;
+  type: 'error' | 'success' | 'info';
+  icon?: string;
+}
+
+interface ChatProps {
+  messages: Message[];
+  onFileUpload: (file: File) => void;
+  language?: string;
+  onQuickReply?: (reply: string) => void;
+}
+
+interface MessageGroup extends Array<Message> {}
+
+const TYPING_INDICATORS = ['dots', 'ellipsis', 'text'] as const;
+type TypingIndicatorStyle = typeof TYPING_INDICATORS[number];
 
 const PAGE_SIZE = 20;
 
-const WELCOME_MESSAGE = {
-  role: "assistant",
-  content: "👋 Hello! I'm your AI assistant. How can I help you today?",
-  timestamp: new Date().toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  })
-};
-
-export function Chat({ messages = [], onFileUpload, language = 'en', onQuickReply }) {
-  const chatRef = useRef(null);
-  const messagesEndRef = useRef(null);
+export function Chat({ messages = [], onFileUpload, language = 'en', onQuickReply }: ChatProps) {
+  const chatRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
   const [page, setPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [typingIndicatorStyle, setTypingIndicatorStyle] = useState('dots');
+  const [typingIndicatorStyle, setTypingIndicatorStyle] = useState<TypingIndicatorStyle>('dots');
   const [hasVoiceSupport] = useState(() => 'webkitSpeechRecognition' in window);
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const mediaRecorder = useRef(null);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
 
   // Paginated messages
   const displayedMessages = useMemo(() => {
@@ -43,10 +64,10 @@ export function Chat({ messages = [], onFileUpload, language = 'en', onQuickRepl
   const messageGroups = useMemo(() => {
     if (!displayedMessages.length) return [];
     
-    return displayedMessages.reduce((groups, message, index, array) => {
+    return displayedMessages.reduce<MessageGroup[]>((groups, message, index, array) => {
       const prevMessage = array[index - 1];
       const timeDiff = prevMessage 
-        ? new Date(message.timestamp) - new Date(prevMessage.timestamp)
+        ? (new Date(message.timestamp).getTime() - new Date(prevMessage.timestamp).getTime())
         : 0;
       
       // Start a new group if:
@@ -69,7 +90,7 @@ export function Chat({ messages = [], onFileUpload, language = 'en', onQuickRepl
     }, []);
   }, [displayedMessages]);
 
-  const scrollToBottom = useCallback((behavior = 'smooth') => {
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     if (!messagesEndRef.current) return;
 
     const scroll = () => {
@@ -108,14 +129,15 @@ export function Chat({ messages = [], onFileUpload, language = 'en', onQuickRepl
     }
   };
 
-  const handleFileSelect = (event) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
         setToast({
           message: 'File size exceeds 5MB limit',
-          type: 'error'
+          type: 'error',
+          icon: 'warning'
         });
         return;
       }
@@ -128,24 +150,27 @@ export function Chat({ messages = [], onFileUpload, language = 'en', onQuickRepl
   const startVoiceInput = () => {
     if (!hasVoiceSupport) return;
 
-    const recognition = new webkitSpeechRecognition();
-    recognition.lang = language;
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    if ('webkitSpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
 
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      wsService.send('voice_input', { content: transcript });
-    };
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        wsService.send('voice_input', { content: transcript });
+      };
 
-    recognition.onerror = (event) => {
-      setToast({
-        message: `Voice input error: ${event.error}`,
-        type: 'error'
-      });
-    };
+      recognition.onerror = (event: any) => {
+        setToast({
+          message: `Voice input error: ${event.error}`,
+          type: 'error',
+          icon: 'error'
+        });
+      };
 
-    recognition.start();
+      recognition.start();
+    }
   };
 
   // Scroll handling
@@ -196,7 +221,7 @@ export function Chat({ messages = [], onFileUpload, language = 'en', onQuickRepl
     );
   }
 
-  function renderFileAttachment(file) {
+  function renderFileAttachment(file: FileAttachment) {
     const isImage = file.type?.startsWith('image/');
     const isAudio = file.type?.startsWith('audio/');
     const isVideo = file.type?.startsWith('video/');
@@ -261,6 +286,7 @@ export function Chat({ messages = [], onFileUpload, language = 'en', onQuickRepl
         <Toast
           message={toast.message}
           type={toast.type}
+          icon={toast.icon}
           onClose={() => setToast(null)}
         />
       )}
@@ -285,7 +311,7 @@ export function Chat({ messages = [], onFileUpload, language = 'en', onQuickRepl
 
       {messageGroups.map((group, groupIndex) => (
         <div key={groupIndex} className={styles.Group}>
-          {group.map((message, index) => (
+          {group.map((message: Message, index: number) => (
             <div 
               key={index} 
               className={styles.Message} 

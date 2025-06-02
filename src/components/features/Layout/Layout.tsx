@@ -1,7 +1,29 @@
 import { useEffect } from 'react';
-import { MenuIcon, RobotIcon, SettingsIcon, SunIcon, MoonIcon, TranslateIcon, ContrastIcon } from '../../common/Icons';
+import { 
+  MenuIcon, 
+  RobotIcon, 
+  SettingsIcon, 
+  SunIcon, 
+  MoonIcon, 
+  TranslateIcon, 
+  ContrastIcon 
+} from '../../common/Icons';
 import { Button } from '../../common/Button';
+import { Theme, Language } from '@/types';
 import styles from './Layout.module.css';
+
+interface LayoutProps {
+  isSidebarExpanded: boolean;
+  onSidebarToggle: (expanded: boolean) => void;
+  theme: Theme;
+  onThemeToggle: () => void;
+  contrast: boolean;
+  onContrastToggle: () => void;
+  language: Language;
+  onLanguageChange: (language: Language) => void;
+  onSettingsOpen: () => void;
+  children: React.ReactNode;
+}
 
 /**
  * Main layout component that handles the application structure
@@ -28,7 +50,7 @@ export function Layout({
   onLanguageChange,
   onSettingsOpen,
   children
-}) {
+}: LayoutProps) {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
@@ -48,9 +70,11 @@ export function Layout({
             variant="ghost"
             size="sm"
             onClick={() => onSidebarToggle(!isSidebarExpanded)}
-            ariaLabel="Toggle sidebar"
+            aria-label="Toggle sidebar"
             leftIcon={<MenuIcon />}
-          />
+          >
+            Menu
+          </Button>
           <RobotIcon className={styles.Logo} />
           <h1 className={styles.Title}>AI Chatbot</h1>
         </div>
@@ -60,7 +84,7 @@ export function Layout({
             variant="ghost"
             size="sm"
             onClick={onThemeToggle}
-            ariaLabel="Toggle theme"
+            aria-label="Toggle theme"
             leftIcon={theme === 'light' ? <MoonIcon /> : <SunIcon />}
           >
             {theme === 'light' ? 'Dark mode' : 'Light mode'}
@@ -70,7 +94,7 @@ export function Layout({
             variant="ghost"
             size="sm"
             onClick={onContrastToggle}
-            ariaLabel="Toggle high contrast"
+            aria-label="Toggle high contrast"
             leftIcon={<ContrastIcon />}
           >
             High contrast
@@ -80,7 +104,7 @@ export function Layout({
             variant="ghost"
             size="sm"
             onClick={onSettingsOpen}
-            ariaLabel="Open settings"
+            aria-label="Open settings"
             leftIcon={<SettingsIcon />}
           >
             Settings
@@ -90,7 +114,7 @@ export function Layout({
             variant="ghost"
             size="sm"
             onClick={() => onLanguageChange(language === 'en' ? 'es' : 'en')}
-            ariaLabel="Change language"
+            aria-label="Change language"
             leftIcon={<TranslateIcon />}
           >
             {language.toUpperCase()}
@@ -103,4 +127,4 @@ export function Layout({
       </main>
     </div>
   );
-} 
+}

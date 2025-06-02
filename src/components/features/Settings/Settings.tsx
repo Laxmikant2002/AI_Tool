@@ -1,6 +1,18 @@
 import { useEffect } from 'react';
 import { SettingsIcon } from '../../common/Icons';
+import { Theme, Language, AIProvider } from '@/types';
 import styles from './Settings.module.css';
+
+interface SettingsProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentProvider: AIProvider;
+  onProviderChange: (provider: AIProvider) => void;
+  theme: Theme;
+  onThemeChange: (theme: Theme) => void;
+  language: Language;
+  onLanguageChange: (language: Language) => void;
+}
 
 export function Settings({
   isOpen,
@@ -11,9 +23,9 @@ export function Settings({
   onThemeChange,
   language,
   onLanguageChange
-}) {
+}: SettingsProps) {
   useEffect(() => {
-    const handleEscape = (e) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
       }
@@ -58,7 +70,7 @@ export function Settings({
             <h3 className={styles.SectionTitle}>AI Provider</h3>
             <select
               value={currentProvider}
-              onChange={(e) => onProviderChange(e.target.value)}
+              onChange={(e) => onProviderChange(e.target.value as AIProvider)}
               className={styles.Select}
             >
               <option value="openai">OpenAI</option>
@@ -70,7 +82,7 @@ export function Settings({
             <h3 className={styles.SectionTitle}>Theme</h3>
             <select
               value={theme}
-              onChange={(e) => onThemeChange(e.target.value)}
+              onChange={(e) => onThemeChange(e.target.value as Theme)}
               className={styles.Select}
             >
               <option value="light">Light</option>
@@ -83,7 +95,7 @@ export function Settings({
             <h3 className={styles.SectionTitle}>Language</h3>
             <select
               value={language}
-              onChange={(e) => onLanguageChange(e.target.value)}
+              onChange={(e) => onLanguageChange(e.target.value as Language)}
               className={styles.Select}
             >
               <option value="en">English</option>
@@ -111,4 +123,4 @@ export function Settings({
       </div>
     </>
   );
-} 
+}

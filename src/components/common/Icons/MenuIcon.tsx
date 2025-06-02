@@ -1,6 +1,10 @@
 import React from 'react';
 
-export default function MenuIcon(props) {
+interface MenuIconProps extends React.SVGProps<SVGSVGElement> {
+  className?: string;
+}
+
+export default function MenuIcon({ className, ...props }: MenuIconProps) {
   return (
     <svg
       viewBox="0 0 24 24"

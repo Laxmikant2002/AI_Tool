@@ -1,6 +1,10 @@
 import React from 'react';
 
-export default function SunIcon(props) {
+interface SunIconProps extends React.SVGProps<SVGSVGElement> {
+  className?: string;
+}
+
+export default function SunIcon({ className, ...props }: SunIconProps) {
   return (
     <svg
       viewBox="0 0 24 24"
